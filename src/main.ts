@@ -138,6 +138,14 @@ let fpsAccum = 0, fpsFrames = 0, fpsLastReport = lastT;
 const MAX_AUDIO_EVENTS_PER_SEC = 2000;
 let audioEventTokens = MAX_AUDIO_EVENTS_PER_SEC;
 
+// 空间+时间去重：cluster 里同位置同时间的碰撞 → 听觉等价于一个事件
+// 60ms 窗内 + 距离 < DEDUPE_DIST 视为重复，只送第一个 audio trigger
+// 这是 "看见乱、听见齐" 的核心：避免 33 个同 pitch voice 在一帧内互相 steal 锁死
+const DEDUPE_DIST = 30;
+const DEDUPE_DIST_SQ = DEDUPE_DIST * DEDUPE_DIST;
+const DEDUPE_WINDOW_MS = 60;
+const recentAudioTriggers: { x: number; y: number; z: number; t: number }[] = [];
+
 function tick(now: number) {
   let dt = (now - lastT) / 1000;
   if (dt > 0.1) dt = 0.1;
@@ -192,22 +200,38 @@ function tick(now: number) {
   // For now just use audio energy as proxy
   flock.setAudioInfluence(audioE);
 
-  // Collisions → synth event triggers（token bucket 限速，视觉碰撞不变）
-  // Refill bucket; cap at MAX/sec → 即使 2000+ collisions/frame 也只送 ~33 个 audio trigger
+  // Collisions → synth event triggers
+  // 1) refill token bucket（2000/sec 上限）
   audioEventTokens = Math.min(
     MAX_AUDIO_EVENTS_PER_SEC,
     audioEventTokens + MAX_AUDIO_EVENTS_PER_SEC * dt
   );
+  // 2) prune 过期的 dedupe 记录
+  const nowMs = now;
+  while (recentAudioTriggers.length > 0 && nowMs - recentAudioTriggers[0].t > DEDUPE_WINDOW_MS) {
+    recentAudioTriggers.shift();
+  }
   const rawCollisions = flock.getCollisionsThisFrame();
-  // 按 mass 降序：tokens 不够时优先保留"分量重"的合并 → 听感不丢核心事件
+  // 按 mass 降序：tokens 不够时优先保留"分量重"的合并
   const sortedCollisions = rawCollisions.length > 1
     ? [...rawCollisions].sort((a, b) => b.newMass - a.newMass)
     : rawCollisions;
   for (const ev of sortedCollisions) {
     if (audioEventTokens < 1) break;
+    // 空间+时间去重：60ms 内 + 距离 < 30 → 听觉视为重复事件
+    let isDup = false;
+    const ex = ev.pos.x, ey = ev.pos.y, ez = ev.pos.z;
+    for (let i = 0; i < recentAudioTriggers.length; i++) {
+      const rt = recentAudioTriggers[i];
+      const dx = ex - rt.x, dy = ey - rt.y, dz = ez - rt.z;
+      if (dx*dx + dy*dy + dz*dz < DEDUPE_DIST_SQ) { isDup = true; break; }
+    }
+    if (isDup) continue;   // 视觉照样 flash 了，只是 audio 这次不响
+
     audioEventTokens -= 1;
+    recentAudioTriggers.push({ x: ex, y: ey, z: ez, t: nowMs });
     synth.triggerCollision({
-      pos: { x: ev.pos.x, y: ev.pos.y, z: ev.pos.z },
+      pos: { x: ex, y: ey, z: ez },
       mass: ev.newMass,
       brightness: (ev.color.r + ev.color.g + ev.color.b) / 3,
       isAccent: ev.isAccent,
