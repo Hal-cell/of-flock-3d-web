@@ -641,11 +641,18 @@ class SynthProcessor extends AudioWorkletProcessor {
       }
 
       // B. Event voices (FM)
+      // Adaptive 归一化 1/sqrt(activeCount)：
+      //   1 voice → scale 1.0 (满音量，事件清晰可闻)
+      //   4 voice → scale 0.5
+      //   32 voice → scale 0.18 (累加不爆)
+      // 替代之前固定 2/NUM_EVENT_VOICES = 0.0625（throttle 后单 voice 太弱）
       {
         let eL = 0, eR = 0;
+        let activeCount = 0;
         for (let vi = 0; vi < NUM_EVENT_VOICES; vi++) {
           const vc = this.eventVoices[vi];
           if (!vc.active) continue;
+          activeCount++;
           vc.age++;   // 用于 steal cooldown
           let envA = 1;
           if (vc.attackCounter < vc.attackSamples) {
@@ -662,13 +669,16 @@ class SynthProcessor extends AudioWorkletProcessor {
           s *= envA;
           eL += s * vc.panL; eR += s * vc.panR;
         }
-        eL *= this.evtVolSmooth * (2 / NUM_EVENT_VOICES);
-        eR *= this.evtVolSmooth * (2 / NUM_EVENT_VOICES);
-        if (eventFoldActive) {
-          eL = Math.sin(eL * eventFoldDrive);
-          eR = Math.sin(eR * eventFoldDrive);
+        if (activeCount > 0) {
+          const eScale = 1 / Math.sqrt(activeCount);
+          eL *= this.evtVolSmooth * eScale;
+          eR *= this.evtVolSmooth * eScale;
+          if (eventFoldActive) {
+            eL = Math.sin(eL * eventFoldDrive);
+            eR = Math.sin(eR * eventFoldDrive);
+          }
+          left += eL; right += eR;
         }
-        left += eL; right += eR;
       }
 
       // C. Wind
