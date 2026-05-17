@@ -62,6 +62,8 @@ export interface FlockParams {
   matBrightness: number; matSpecular: number; matAmbient: number; matGlow: number;
   // conductor coupling
   conductorAmount: number;
+  // collision event throttle (sent to synth — read by main loop, not by Flock3D itself)
+  maxEventsPerFrame: number;
   // mycelium
   myceliumEnabled: boolean; myceliumLinkMode: number;   // 0..3
   myceliumLinkDist: number; myceliumMaxLinks: number; myceliumKnnK: number;
@@ -88,6 +90,7 @@ export const DEFAULT_FLOCK_PARAMS: FlockParams = {
   tailLength: 0, tailAudioSensitivity: 1, tailAlpha: 0.45,
   matBrightness: 0.208, matSpecular: 0.326, matAmbient: 0.163, matGlow: 0.702,
   conductorAmount: 1,
+  maxEventsPerFrame: 4,
   myceliumEnabled: true, myceliumLinkMode: 3,   // Gabriel
   myceliumLinkDist: 69.015, myceliumMaxLinks: 5, myceliumKnnK: 4,
   myceliumLifetime: 90, myceliumNodeStride: 5,

@@ -187,7 +187,14 @@ function tick(now: number) {
   flock.setAudioInfluence(audioE);
 
   // Collisions → synth event triggers
-  for (const ev of flock.getCollisionsThisFrame()) {
+  // 节流：按 mass 降序取前 N 个（粒子聚集时一帧可能几十次碰撞，
+  // 全发会让 32-voice pool 满负荷 + amp 累加爆炸 + voice churn 锁死）
+  const allCollisions = flock.getCollisionsThisFrame();
+  const cap = flock.p.maxEventsPerFrame | 0;
+  const chosen = allCollisions.length > cap
+    ? [...allCollisions].sort((a, b) => b.newMass - a.newMass).slice(0, cap)
+    : allCollisions;
+  for (const ev of chosen) {
     synth.triggerCollision({
       pos: { x: ev.pos.x, y: ev.pos.y, z: ev.pos.z },
       mass: ev.newMass,

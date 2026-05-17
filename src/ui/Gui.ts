@@ -156,6 +156,7 @@ export function buildGui(opts: {
   fFlash.add(flock.p, 'flashIntensity', 0, 2);
   fFlash.add(flock.p, 'accentChance', 0, 1);
   fFlash.add(flock.p, 'accentSizeMul', 1, 5);
+  fFlash.add(flock.p, 'maxEventsPerFrame', 1, 16, 1).name('max events/frame');
 
   const fCluster = gui.addFolder('Cluster Detection');
   fCluster.add(flock.p, 'clusterGridRes', 3, 10, 1);
