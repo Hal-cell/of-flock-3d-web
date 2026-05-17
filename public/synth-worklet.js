@@ -144,7 +144,7 @@ class SynthProcessor extends AudioWorkletProcessor {
     this.eventVoices = [];
     for (let i = 0; i < NUM_EVENT_VOICES; i++) {
       this.eventVoices.push({
-        active: false, age: 0, attackCounter: 0, attackSamples: 0,
+        active: false, attackCounter: 0, attackSamples: 0,
         panL: 0.7, panR: 0.7,
         carrierFreq: 220, carrierPhase: 0, carrierAmp: 0, carrierDecay: 0.999,
         modFreq: 220, modPhase: 0, modIndex: 0, modIndexDecay: 0.999,
@@ -468,34 +468,27 @@ class SynthProcessor extends AudioWorkletProcessor {
     const verbAmt = p.reverbAmt;
 
     // Drain event ring → allocate to event voices
-    // Voice steal cooldown: voices < 20ms old (~880 samples @ 44.1k) 不被偷
-    // → 防止 cluster 爆触发时 voice churn 导致每个 voice 没机会响完就被替换
-    // → 池满 + 全部年轻时丢弃新 trigger（自然 rate limiter）
-    const stealGuardSamples = (0.020 * sr) | 0;
     let r = this.ringRead;
     const wEnd = this.ringWrite;
     while (r !== wEnd) {
       const te = this.eventRing[r];
-      // find slot：先找 inactive，否则找最老的（age 最大）且过了 cooldown 的
-      let tgt = -1; let oldestAge = -1;
+      // find slot
+      let tgt = -1; let minAmp = 1e9;
       for (let i = 0; i < NUM_EVENT_VOICES; i++) {
         if (!this.eventVoices[i].active) { tgt = i; break; }
-        if (this.eventVoices[i].age < stealGuardSamples) continue;   // protected
-        if (this.eventVoices[i].age > oldestAge) {
-          oldestAge = this.eventVoices[i].age; tgt = i;
+        if (this.eventVoices[i].carrierAmp < minAmp) {
+          minAmp = this.eventVoices[i].carrierAmp; tgt = i;
         }
       }
       if (tgt >= 0) {
         const v = this.eventVoices[tgt];
-        v.active = true; v.age = 0;
-        v.attackCounter = 0; v.attackSamples = te.attackSamples;
+        v.active = true; v.attackCounter = 0; v.attackSamples = te.attackSamples;
         v.panL = te.panL; v.panR = te.panR;
         v.carrierFreq = te.carrierFreq; v.carrierPhase = 0;
         v.carrierAmp = te.carrierAmp; v.carrierDecay = te.carrierDecay;
         v.modFreq = te.modFreq; v.modPhase = 0.123;
         v.modIndex = te.modIndex; v.modIndexDecay = te.modIndexDecay;
       }
-      // tgt < 0 → 所有 voice 都在 cooldown → 这次 trigger 被丢弃（不入队、不阻塞）
       r = (r + 1) & (RING_SIZE - 1);
     }
     this.ringRead = r;
@@ -641,19 +634,11 @@ class SynthProcessor extends AudioWorkletProcessor {
       }
 
       // B. Event voices (FM)
-      // Adaptive 归一化 1/sqrt(activeCount)：
-      //   1 voice → scale 1.0 (满音量，事件清晰可闻)
-      //   4 voice → scale 0.5
-      //   32 voice → scale 0.18 (累加不爆)
-      // 替代之前固定 2/NUM_EVENT_VOICES = 0.0625（throttle 后单 voice 太弱）
       {
         let eL = 0, eR = 0;
-        let activeCount = 0;
         for (let vi = 0; vi < NUM_EVENT_VOICES; vi++) {
           const vc = this.eventVoices[vi];
           if (!vc.active) continue;
-          activeCount++;
-          vc.age++;   // 用于 steal cooldown
           let envA = 1;
           if (vc.attackCounter < vc.attackSamples) {
             envA = vc.attackCounter / vc.attackSamples;
@@ -669,16 +654,13 @@ class SynthProcessor extends AudioWorkletProcessor {
           s *= envA;
           eL += s * vc.panL; eR += s * vc.panR;
         }
-        if (activeCount > 0) {
-          const eScale = 1 / Math.sqrt(activeCount);
-          eL *= this.evtVolSmooth * eScale;
-          eR *= this.evtVolSmooth * eScale;
-          if (eventFoldActive) {
-            eL = Math.sin(eL * eventFoldDrive);
-            eR = Math.sin(eR * eventFoldDrive);
-          }
-          left += eL; right += eR;
+        eL *= this.evtVolSmooth * (2 / NUM_EVENT_VOICES);
+        eR *= this.evtVolSmooth * (2 / NUM_EVENT_VOICES);
+        if (eventFoldActive) {
+          eL = Math.sin(eL * eventFoldDrive);
+          eR = Math.sin(eR * eventFoldDrive);
         }
+        left += eL; right += eR;
       }
 
       // C. Wind
