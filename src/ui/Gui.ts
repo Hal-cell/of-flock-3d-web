@@ -7,6 +7,7 @@ import { SynthBridge } from '../audio/SynthBridge';
 import { MorphologyConductor } from '../control/MorphologyConductor';
 import { Synchresis } from '../control/Synchresis';
 import { ScorePlayer } from '../control/ScorePlayer';
+import { applySaved, clearSettings } from '../utils/persistence';
 
 const SCALE_NAMES = {
   'penta min': 0, 'penta maj': 1, 'major': 2, 'minor nat': 3,
@@ -34,10 +35,22 @@ export function buildGui(opts: {
   visualConductor: MorphologyConductor;
   synchresis: Synchresis;
   scorePlayer: ScorePlayer;
+  savedSynthParams?: any;
 }) {
   const { flock, synth, audioConductor, visualConductor, synchresis, scorePlayer } = opts;
   const gui = new GUI({ title: 'of-flock-3d (web)', width: 320 });
   gui.close();   // start collapsed
+
+  // Reset button at top — clear localStorage + reload
+  const sysFolder = gui.addFolder('System');
+  sysFolder.add({
+    reset: () => {
+      if (confirm('Reset all settings to defaults?')) {
+        clearSettings();
+        location.reload();
+      }
+    }
+  }, 'reset').name('Reset all settings');
 
   // ─── Morphology ───
   const fMorph = gui.addFolder('Morphology (Audio)');
@@ -166,6 +179,9 @@ export function buildGui(opts: {
     clickConductorAmount: 0, clickLengthMs: 3, clickFormantHz: 4000,
   };
 
+  // Apply saved synth params (overwrites defaults for keys present in saved)
+  if (opts.savedSynthParams) applySaved(synthParams, opts.savedSynthParams);
+
   function pushAll() { synth.setParams(synthParams); }
   pushAll();   // initial flush after worklet ready
 
@@ -238,5 +254,5 @@ export function buildGui(opts: {
   fAux.add(synthParams, 'conductorAmount', 0, 1).name('conductor amount').onChange(v => synth.setParam('conductorAmount', v));
   fAux.add(synthParams, 'audioEnergyGain', 0.1, 5).name('audio energy gain').onChange(v => synth.setParam('audioEnergyGain', v));
 
-  return gui;
+  return { gui, synthParams };
 }

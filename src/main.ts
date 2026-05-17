@@ -14,6 +14,7 @@ import { MorphologyConductor } from './control/MorphologyConductor';
 import { Synchresis } from './control/Synchresis';
 import { ScorePlayer } from './control/ScorePlayer';
 import { buildGui } from './ui/Gui';
+import { loadSettings, saveSettings, applySaved } from './utils/persistence';
 
 // ─── Three.js setup ───
 const appEl = document.getElementById('app')!;
@@ -47,18 +48,51 @@ visualConductor.p.mode = 2;   // DESCENT by default (matches C++ first-run behav
 const synchresis = new Synchresis();
 const scorePlayer = new ScorePlayer();
 
+// ─── Load persisted settings (before GUI build → controllers see saved values) ───
+const saved = loadSettings();
+if (saved) {
+  applySaved(flock.p, saved.flock);
+  applySaved(audioConductor.p, saved.audioConductor);
+  applySaved(visualConductor.p, saved.visualConductor);
+  applySaved(synchresis.p, saved.synchresis);
+  if (flock.p.particleCount !== flock.pool.N) flock.resizeIfNeeded();
+  console.log('[main] restored settings from', new Date(saved.savedAt || 0).toLocaleString());
+}
+
 // GUI built once worklet is up (so initial synth params flush works)
 let gui: any = null;
+let synthParamsRef: any = null;
+let saveTimer: number | null = null;
 
 // ─── Audio gate ───
 const gate = document.getElementById('audio-gate')!;
 async function bootAudio() {
   await synth.init();
-  gui = buildGui({
+  const built = buildGui({
     flock, synth,
     audioConductor, visualConductor,
     synchresis, scorePlayer,
+    savedSynthParams: saved?.synth,
   });
+  gui = built.gui;
+  synthParamsRef = built.synthParams;
+
+  // Auto-save every 2s + on tab visibility change + on unload
+  const doSave = () => {
+    saveSettings({
+      flock: { ...flock.p },
+      audioConductor: { ...audioConductor.p },
+      visualConductor: { ...visualConductor.p },
+      synchresis: { ...synchresis.p },
+      synth: { ...synthParamsRef },
+    });
+  };
+  saveTimer = window.setInterval(doSave, 2000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) doSave();
+  });
+  window.addEventListener('beforeunload', doSave);
+
   gate.classList.add('hidden');
 }
 gate.addEventListener('click', bootAudio, { once: true });
