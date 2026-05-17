@@ -41,7 +41,7 @@ export function buildGui(opts: {
   const gui = new GUI({ title: 'of-flock-3d (web)', width: 320 });
   gui.close();   // start collapsed
 
-  // Reset button at top — clear localStorage + reload
+  // System folder: reset + export current as JSON
   const sysFolder = gui.addFolder('System');
   sysFolder.add({
     reset: () => {
@@ -51,23 +51,48 @@ export function buildGui(opts: {
       }
     }
   }, 'reset').name('Reset all settings');
+  sysFolder.add({
+    copyJson: async () => {
+      const snapshot = {
+        flock: { ...flock.p },
+        audioConductor: { ...audioConductor.p },
+        visualConductor: { ...visualConductor.p },
+        synchresis: { ...synchresis.p },
+        synth: { ...synthParams },
+      };
+      const text = JSON.stringify(snapshot, null, 2);
+      try {
+        await navigator.clipboard.writeText(text);
+        alert('Settings JSON copied to clipboard (' + text.length + ' chars). Paste to share.');
+      } catch (e) {
+        console.log('[settings export]\n' + text);
+        alert('Clipboard blocked — JSON dumped to console. Open DevTools to copy.');
+      }
+    }
+  }, 'copyJson').name('Copy settings JSON');
 
   // ─── Morphology ───
+  // .listen() 让 GUI 在 ScorePlayer 改 conductor 参数时自动刷新显示
   const fMorph = gui.addFolder('Morphology (Audio)');
-  fMorph.add(audioConductor.p, 'mode', MODE_NAMES);
-  fMorph.add(audioConductor.p, 'curveShape', CURVE_NAMES).name('curve');
-  fMorph.add(audioConductor.p, 'phaseDuration', 1, 60).name('duration (s)');
-  fMorph.add(audioConductor.p, 'oscRate', 0.05, 4).name('osc rate (Hz)');
-  fMorph.add(audioConductor.p, 'oscDepth', 0, 0.5);
+  fMorph.add(audioConductor.p, 'mode', MODE_NAMES).listen();
+  fMorph.add(audioConductor.p, 'curveShape', CURVE_NAMES).name('curve').listen();
+  fMorph.add(audioConductor.p, 'phaseDuration', 1, 60).name('duration (s)').listen();
+  fMorph.add(audioConductor.p, 'oscRate', 0.05, 4).name('osc rate (Hz)').listen();
+  fMorph.add(audioConductor.p, 'oscDepth', 0, 0.5).listen();
   fMorph.add(audioConductor.p, 'autoLoop');
+  // 显示当前 conductor 实时输出（read-only）
+  const condReadout = { value: 0 };
+  fMorph.add(condReadout, 'value', 0, 1).name('▸ live value').listen().disable();
+  // 每帧外部更新会把数值回写进 condReadout.value（在 main 里 hook）
+  (fMorph as any).__condReadout = condReadout;
   fMorph.add({ trigger: () => audioConductor.trigger() }, 'trigger').name('▶ trigger');
 
   const fMorphV = gui.addFolder('Morphology (Visual)');
-  fMorphV.add(visualConductor.p, 'mode', MODE_NAMES);
-  fMorphV.add(visualConductor.p, 'curveShape', CURVE_NAMES).name('curve');
-  fMorphV.add(visualConductor.p, 'phaseDuration', 1, 60).name('duration (s)');
-  fMorphV.add(visualConductor.p, 'oscRate', 0.05, 4).name('osc rate (Hz)');
-  fMorphV.add(visualConductor.p, 'oscDepth', 0, 0.5);
+  fMorphV.add(visualConductor.p, 'mode', MODE_NAMES).listen();
+  fMorphV.add(visualConductor.p, 'curveShape', CURVE_NAMES).name('curve').listen();
+  fMorphV.add(visualConductor.p, 'phaseDuration', 1, 60).name('duration (s)').listen();
+  fMorphV.add(visualConductor.p, 'oscRate', 0.05, 4).name('osc rate (Hz)').listen();
+  fMorphV.add(visualConductor.p, 'oscDepth', 0, 0.5).listen();
   fMorphV.add(visualConductor.p, 'autoLoop');
 
   // ─── Synchresis ───
@@ -83,7 +108,7 @@ export function buildGui(opts: {
 
   // ─── Score ───
   const fScore = gui.addFolder('Score');
-  const scoreState = { name: 'Figure 2 Arc (30s)' };
+  const scoreState = { name: 'Figure 2 Arc (30s)', status: 'idle' };
   const scoreOptions: Record<string, string> = {};
   scorePlayer.scores().forEach(s => scoreOptions[s.name] = s.name);
   fScore.add(scoreState, 'name', scoreOptions).name('score');
@@ -92,6 +117,8 @@ export function buildGui(opts: {
     if (idx >= 0) scorePlayer.play(idx, audioConductor);
   }}, 'play').name('▶ Play Score');
   fScore.add({ stop: () => scorePlayer.stop() }, 'stop').name('■ Stop');
+  fScore.add(scoreState, 'status').name('status').listen().disable();
+  (fScore as any).__scoreState = scoreState;
 
   // ─── Visual / Flock ───
   const fFlock = gui.addFolder('Flock');

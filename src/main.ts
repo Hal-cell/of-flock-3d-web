@@ -207,6 +207,18 @@ function tick(now: number) {
 
   renderer.render(scene, camera);
 
+  // Live readouts → GUI
+  if (gui) {
+    for (const f of gui.folders) {
+      const cr = (f as any).__condReadout;
+      if (cr) cr.value = audioConductor.value();
+      const ss = (f as any).__scoreState;
+      if (ss) ss.status = scorePlayer.isPlaying()
+        ? `▶ ${scorePlayer.currentScoreName()}  ${scorePlayer.elapsed().toFixed(1)}s`
+        : 'idle';
+    }
+  }
+
   // HUD
   fpsAccum += dt; fpsFrames++;
   if (now - fpsLastReport > 500) {
