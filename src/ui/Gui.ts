@@ -136,8 +136,8 @@ export function buildGui(opts: {
   fFields.add(flock.p, 'vortexAmp', 0, 200);
   fFields.add(flock.p, 'spiralAmp', 0, 200);
   fFields.add(flock.p, 'curlAmp', 0, 200);
-  fFields.add(flock.p, 'attractorAmp', 0, 200);
-  fFields.add(flock.p, 'repellerAmp', 0, 200);
+  fFields.add(flock.p, 'attractorAmp', 0, 80);
+  fFields.add(flock.p, 'repellerAmp', 0, 800);
 
   const fBoid = gui.addFolder('Boid / Merge');
   fBoid.add(flock.p, 'flockSeparation', 0, 5);

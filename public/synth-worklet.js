@@ -728,8 +728,10 @@ class SynthProcessor extends AudioWorkletProcessor {
           g.readPos += g.pitch; g.age++;
           if (g.age >= g.length) g.active = false;
         }
-        gL *= this.granVolSmooth * 0.5;
-        gR *= this.granVolSmooth * 0.5;
+        // post-mix 归一化：16 grains 同时不再叠加成 8x，改为 ~1x 上限
+        // 比之前小 4 倍 — 用户需要把 granVol 拉到 4 才能回到旧响度（slider max 3 已够用）
+        gL *= this.granVolSmooth * (2 / NUM_GRAINS);
+        gR *= this.granVolSmooth * (2 / NUM_GRAINS);
         left += gL; right += gR;
       }
 
@@ -798,13 +800,49 @@ class SynthProcessor extends AudioWorkletProcessor {
         right += cR * clkVol;
       }
 
-      // Master limiter
+      // Pre-master soft compressor (knee at ±0.8)：避免直接撞 tanh 硬限幅
+      // 输入 1.0 → 输出 ~0.95；输入 5.0 → 输出 ~0.98；不会到 1.0
+      // 这样多 layer 堆叠不会瞬间撞限幅器边界，余量给后续处理
+      const knee = 0.8;
+      const absL = left < 0 ? -left : left;
+      if (absL > knee) {
+        const over = absL - knee;
+        const sign = left < 0 ? -1 : 1;
+        left = sign * (knee + (1 - knee) * Math.tanh(over / (1 - knee)));
+      }
+      const absR = right < 0 ? -right : right;
+      if (absR > knee) {
+        const over = absR - knee;
+        const sign = right < 0 ? -1 : 1;
+        right = sign * (knee + (1 - knee) * Math.tanh(over / (1 - knee)));
+      }
+
+      // Master gain + final tanh safety limiter
       left  = Math.tanh(left * master);
       right = Math.tanh(right * master);
+
+      // NaN/Inf 守卫 — 一旦出现立即归零，避免 NaN 锁死整条 audio node
+      if (!isFinite(left)) left = 0;
+      if (!isFinite(right)) right = 0;
 
       L[i] = left; R[i] = right;
       const mono = (left + right) * 0.5;
       sumSq += mono * mono;
+    }
+
+    // Stateful guards: SVF + smoothing accumulators 飞了就重置（防 NaN 永久污染）
+    if (!isFinite(this.cdrVolSmooth)) this.cdrVolSmooth = 0;
+    if (!isFinite(this.svfFcSmooth)) this.svfFcSmooth = 0.05;
+    if (!isFinite(this.foldDriveSmooth)) this.foldDriveSmooth = 1;
+    if (!isFinite(this.windVolSmooth)) this.windVolSmooth = 0;
+    if (!isFinite(this.evtVolSmooth)) this.evtVolSmooth = 0;
+    if (!isFinite(this.granVolSmooth)) this.granVolSmooth = 0;
+    if (!isFinite(this.windSvfLowL) || Math.abs(this.windSvfLowL) > 1e4) { this.windSvfLowL = 0; this.windSvfBandL = 0; }
+    if (!isFinite(this.windSvfLowR) || Math.abs(this.windSvfLowR) > 1e4) { this.windSvfLowR = 0; this.windSvfBandR = 0; }
+    for (const dv of this.droneVoices) {
+      if (!isFinite(dv.svfLow) || Math.abs(dv.svfLow) > 1e4) { dv.svfLow = 0; dv.svfBand = 0; }
+      if (!isFinite(dv.currentVol)) dv.currentVol = 0;
+      if (!isFinite(dv.currentFreq)) dv.currentFreq = 110;
     }
 
     // Audio energy → main (per buffer, rate-limited)
