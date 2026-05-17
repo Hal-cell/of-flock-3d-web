@@ -31,34 +31,47 @@
       #audio-gate {
         position: fixed;
         inset: 0;
-        background: rgba(5, 6, 8, 0.92);
+        background: rgba(5, 6, 8, 0.45);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 18px;
+        gap: 14px;
         z-index: 1000;
         cursor: pointer;
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(3px);
       }
       #audio-gate.hidden { display: none; }
       #audio-gate .title {
-        font-size: 28px;
+        font-size: 56px;
         font-weight: 200;
-        letter-spacing: 0.4em;
-        opacity: 0.9;
+        letter-spacing: 0.35em;
+        opacity: 0.95;
+        text-transform: uppercase;
       }
       #audio-gate .sub {
         font-size: 13px;
         font-weight: 300;
-        opacity: 0.55;
-        letter-spacing: 0.15em;
+        opacity: 0.65;
+        letter-spacing: 0.12em;
+        max-width: 540px;
+        text-align: center;
+        line-height: 1.6;
+      }
+      #audio-gate .author {
+        margin-top: 4px;
+        font-size: 11px;
+        font-weight: 300;
+        opacity: 0.45;
+        letter-spacing: 0.18em;
+        font-style: italic;
       }
       #audio-gate .hint {
-        margin-top: 12px;
-        font-size: 11px;
-        opacity: 0.35;
-        letter-spacing: 0.1em;
+        margin-top: 22px;
+        font-size: 10px;
+        opacity: 0.3;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
       }
       /* HUD overlay */
       #hud {
@@ -80,8 +93,9 @@
     <div id="hud">of-flock-3d · web port · P0</div>
 
     <div id="audio-gate">
-      <div class="title">OF-FLOCK-3D</div>
-      <div class="sub">web port · P0 skeleton</div>
+      <div class="title">Flock</div>
+      <div class="sub">An experiment of motion-based spectromorphological audiovisual composition</div>
+      <div class="author">made by Hal Xu</div>
       <div class="hint">click anywhere to start</div>
     </div>
 
