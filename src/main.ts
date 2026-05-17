@@ -1,21 +1,21 @@
 /**
- * of-flock-3d (web port) · P0 entry
+ * of-flock-3d (web port) — main entry
  * ──────────────────────────────────────────────
- * Minimal skeleton to prove the full pipeline runs:
- *   - Three.js WebGL2 renderer + perspective cam + orbit controls
- *   - Placeholder particle field (will become Flock3D in P1)
- *   - Web Audio API + AudioWorklet pipeline (silent for P0)
- *   - User-gesture audio gate (browser policy)
- *
- * Next milestone (P1): real boid behaviour + 6 force fields.
+ * Mirrors C++ ofApp::setup + update + draw flow:
+ *   Flock3D + Synth (worklet) + MorphologyConductor × 2 + Synchresis + Score
+ * Audio gate (browser user-gesture requirement) before any DSP starts.
  */
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Flock3D } from './visual/Flock3D';
+import { SynthBridge } from './audio/SynthBridge';
+import { MorphologyConductor } from './control/MorphologyConductor';
+import { Synchresis } from './control/Synchresis';
+import { ScorePlayer } from './control/ScorePlayer';
+import { buildGui } from './ui/Gui';
 
-// ────────────────────────────────────────────────
-// Three.js setup
-// ────────────────────────────────────────────────
+// ─── Three.js setup ───
 const appEl = document.getElementById('app')!;
 const hudEl = document.getElementById('hud')!;
 
@@ -29,133 +29,164 @@ renderer.setClearColor(0x06080c, 1);
 appEl.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(
-  60,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  10000
-);
-camera.position.set(0, 0, 600);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
+camera.position.set(0, 0, 700);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.rotateSpeed = 0.6;
+controls.autoRotate = false;   // we'll drive rotation via Flock.autoRotate
 
-// ────────────────────────────────────────────────
-// P0 placeholder: 1000 spinning point sprites
-// (P1 will replace with proper Flock3D module)
-// ────────────────────────────────────────────────
-const placeholderCount = 1000;
-const positions = new Float32Array(placeholderCount * 3);
-const colors = new Float32Array(placeholderCount * 3);
-for (let i = 0; i < placeholderCount; i++) {
-  const r = 250 * Math.cbrt(Math.random());
-  const theta = Math.random() * Math.PI * 2;
-  const phi = Math.acos(2 * Math.random() - 1);
-  positions[i * 3 + 0] = r * Math.sin(phi) * Math.cos(theta);
-  positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-  positions[i * 3 + 2] = r * Math.cos(phi);
-  const hue = (i / placeholderCount) * 0.6 + 0.5;
-  const col = new THREE.Color().setHSL(hue, 0.7, 0.6);
-  colors[i * 3 + 0] = col.r;
-  colors[i * 3 + 1] = col.g;
-  colors[i * 3 + 2] = col.b;
-}
-const geom = new THREE.BufferGeometry();
-geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-const placeholderMat = new THREE.PointsMaterial({
-  size: 4,
-  sizeAttenuation: true,
-  vertexColors: true,
-  transparent: true,
-  opacity: 0.85,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false,
-});
-const placeholderPoints = new THREE.Points(geom, placeholderMat);
-scene.add(placeholderPoints);
+// ─── Modules ───
+const flock = new Flock3D(scene, camera);
+const synth = new SynthBridge();
+const audioConductor = new MorphologyConductor();
+const visualConductor = new MorphologyConductor();
+visualConductor.p.mode = 2;   // DESCENT by default (matches C++ first-run behaviour)
+const synchresis = new Synchresis();
+const scorePlayer = new ScorePlayer();
 
-// ────────────────────────────────────────────────
-// Audio: AudioContext + AudioWorklet
-// Silent in P0 — just proves the pipeline is wired.
-// ────────────────────────────────────────────────
-let audioCtx: AudioContext | null = null;
-let workletNode: AudioWorkletNode | null = null;
+// GUI built once worklet is up (so initial synth params flush works)
+let gui: any = null;
 
-async function startAudio() {
-  if (audioCtx) return;
-  audioCtx = new AudioContext({ latencyHint: 'interactive', sampleRate: 44100 });
-  try {
-    await audioCtx.audioWorklet.addModule('/synth-worklet.js');
-  } catch (err) {
-    console.error('[audio] failed to load worklet:', err);
-    return;
-  }
-  workletNode = new AudioWorkletNode(audioCtx, 'synth-processor', {
-    numberOfInputs: 0,
-    numberOfOutputs: 1,
-    outputChannelCount: [2],
-  });
-  workletNode.connect(audioCtx.destination);
-  console.log('[audio] AudioWorklet running @', audioCtx.sampleRate, 'Hz');
-}
-
+// ─── Audio gate ───
 const gate = document.getElementById('audio-gate')!;
-gate.addEventListener(
-  'click',
-  async () => {
-    await startAudio();
-    gate.classList.add('hidden');
-  },
-  { once: true }
-);
+async function bootAudio() {
+  await synth.init();
+  gui = buildGui({
+    flock, synth,
+    audioConductor, visualConductor,
+    synchresis, scorePlayer,
+  });
+  gate.classList.add('hidden');
+}
+gate.addEventListener('click', bootAudio, { once: true });
 
-// ────────────────────────────────────────────────
-// Resize
-// ────────────────────────────────────────────────
+// ─── Drag-and-drop WAV → granular source ───
+window.addEventListener('dragover', (e) => { e.preventDefault(); });
+window.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+  for (const f of Array.from(e.dataTransfer.files)) {
+    if (/\.(wav|aif|aiff|flac|mp3)$/i.test(f.name)) {
+      try { await synth.loadWavFromFile(f); } catch (err) { console.warn('drop load failed', err); }
+      break;
+    }
+  }
+});
+
+// ─── Resize ───
 window.addEventListener('resize', () => {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
+  const w = window.innerWidth, h = window.innerHeight;
   renderer.setSize(w, h);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 });
 
-// ────────────────────────────────────────────────
-// Main loop
-// ────────────────────────────────────────────────
+// ─── Keyboard ───
+window.addEventListener('keydown', (e) => {
+  if (e.key === ' ') { flock.reset(); synth.reset(); }
+  if (e.key === 'f') {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }
+});
+
+// ─── Main loop ───
 let lastT = performance.now();
-let fpsAccum = 0;
-let fpsFrames = 0;
-let fpsLastReport = lastT;
+let fpsAccum = 0, fpsFrames = 0, fpsLastReport = lastT;
 
 function tick(now: number) {
-  const dt = (now - lastT) / 1000;
+  let dt = (now - lastT) / 1000;
+  if (dt > 0.1) dt = 0.1;
   lastT = now;
 
-  // 简单旋转占位粒子，证明 GL 在动
-  placeholderPoints.rotation.y += dt * 0.15;
-  placeholderPoints.rotation.x += dt * 0.05;
+  // Score → may overwrite conductor params
+  scorePlayer.update(dt, audioConductor);
 
-  controls.update();
+  // Conductors
+  audioConductor.update(dt);
+  visualConductor.update(dt);
+  const audioCurve = audioConductor.value();
+  const visualCurve = synchresis.p.counterpointEnabled ? visualConductor.value() : audioCurve;
+
+  // Synchresis
+  const audioE = synth.audioEnergyMeasured;
+  const visualE = 0.5;   // TODO P9: real visual energy measurement
+  synchresis.update(dt, audioCurve, audioE, visualE);
+
+  const convForce = synchresis.convergenceForce();
+  const visualBlended = visualCurve + (audioCurve - visualCurve) * convForce;
+  const audioTarget = Math.max(0, Math.min(1, audioCurve + synchresis.audioCorrection()));
+  const visualTarget = Math.max(0, Math.min(1, visualBlended + synchresis.visualCorrection()));
+
+  synth.setConductorValue(audioTarget);
+  flock.setConductorValue(visualTarget);
+
+  // Flock physics + draw
+  flock.update(dt);
+  flock.draw();
+
+  // Push cross-coupling state to synth
+  synth.setFieldAmpTotal(flock.getFieldAmpTotal());
+  synth.setTailInfluence(flock.getCurrentTailNormalized());
+
+  // Cluster info → drone voice池
+  const clusters = flock.getClusters(4);
+  const clusterPayload = clusters.map(c => ({
+    x: c.centroid.x, y: c.centroid.y, z: c.centroid.z, mass: c.totalMass,
+  }));
+  synth.updateClusters(clusterPayload, flock.getWorldRadius());
+  synth.setClusterCount(clusters.length);
+  synth.setMyceliumLinks(flock.getMyceliumLinkCount());
+
+  // Audio influence → flock trail length
+  // (approximate the C++ getAudioInfluenceForTail: average of normalized synth params)
+  // For now just use audio energy as proxy
+  flock.setAudioInfluence(audioE);
+
+  // Collisions → synth event triggers
+  for (const ev of flock.getCollisionsThisFrame()) {
+    synth.triggerCollision({
+      pos: { x: ev.pos.x, y: ev.pos.y, z: ev.pos.z },
+      mass: ev.newMass,
+      brightness: (ev.color.r + ev.color.g + ev.color.b) / 3,
+      isAccent: ev.isAccent,
+    });
+  }
+
+  // Camera auto-rotate (matches Flock3D.draw rotation in C++)
+  if (flock.p.autoRotate) {
+    const c = camera.position;
+    const a = dt * 0.3;
+    const cos = Math.cos(a), sin = Math.sin(a);
+    const nx = c.x * cos - c.z * sin;
+    const nz = c.x * sin + c.z * cos;
+    camera.position.set(nx, c.y, nz);
+    camera.lookAt(0, 0, 0);
+    controls.update();
+  } else {
+    controls.update();
+  }
+
   renderer.render(scene, camera);
 
-  // FPS HUD（每秒刷一次）
-  fpsAccum += dt;
-  fpsFrames++;
-  if (now - fpsLastReport > 1000) {
+  // HUD
+  fpsAccum += dt; fpsFrames++;
+  if (now - fpsLastReport > 500) {
     const fps = fpsFrames / fpsAccum;
     hudEl.textContent =
-      `of-flock-3d · web port · P0   fps: ${fps.toFixed(1)}   audio: ${audioCtx ? 'on' : 'off'}`;
-    fpsAccum = 0;
-    fpsFrames = 0;
-    fpsLastReport = now;
+      `fps ${fps.toFixed(0)}` +
+      `   morph: ${audioConductor.getModeName()} ${audioConductor.value().toFixed(2)}` +
+      `   sync: ${synchresis.syncStrength().toFixed(2)}` +
+      `   clusters: ${clusters.length}` +
+      `   links: ${flock.getMyceliumLinkCount()}` +
+      `   ae: ${audioE.toFixed(2)}`;
+    fpsAccum = 0; fpsFrames = 0; fpsLastReport = now;
   }
 
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
-
-console.log('[main] of-flock-3d web port P0 booted');
+console.log('[main] of-flock-3d web port booted');
