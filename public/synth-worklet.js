@@ -844,6 +844,19 @@ class SynthProcessor extends AudioWorkletProcessor {
       if (!isFinite(dv.currentVol)) dv.currentVol = 0;
       if (!isFinite(dv.currentFreq)) dv.currentFreq = 110;
     }
+    // Reverb FDN delay buffers — NaN / 过大值检测，整体重置
+    // FDN 在持续大输入下会聚合，加上 dampLpState 链式累加，一旦坏了所有 tap 都坏
+    for (let k = 0; k < NUM_REVERB_DELAYS; k++) {
+      if (!isFinite(this.dampLpState[k]) || Math.abs(this.dampLpState[k]) > 1e3) this.dampLpState[k] = 0;
+      // sample 几个 tap 看有无 NaN（成本极低，每 buffer 一次）
+      const buf = this.delayBuf[k];
+      const probe = buf[this.delayWrite[k]];
+      if (!isFinite(probe) || Math.abs(probe) > 1e4) {
+        // 全清零（不损失太多，reverb 自然衰减回来）
+        for (let j = 0; j < buf.length; j++) buf[j] = 0;
+        this.dampLpState[k] = 0;
+      }
+    }
 
     // Audio energy → main (per buffer, rate-limited)
     const rms = Math.sqrt(sumSq / Math.max(1, n));

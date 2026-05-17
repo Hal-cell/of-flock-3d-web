@@ -169,9 +169,14 @@ function tick(now: number) {
 
   // Cluster info → drone voice池
   const clusters = flock.getClusters(4);
-  const clusterPayload = clusters.map(c => ({
-    x: c.centroid.x, y: c.centroid.y, z: c.centroid.z, mass: c.totalMass,
-  }));
+  // Guard NaN/Inf — 即使粒子崩了也不污染 audio
+  const safe = (v: number) => (isFinite(v) ? v : 0);
+  const clusterPayload = clusters
+    .map(c => ({
+      x: safe(c.centroid.x), y: safe(c.centroid.y), z: safe(c.centroid.z),
+      mass: safe(c.totalMass),
+    }))
+    .filter(c => c.mass > 0);
   synth.updateClusters(clusterPayload, flock.getWorldRadius());
   synth.setClusterCount(clusters.length);
   synth.setMyceliumLinks(flock.getMyceliumLinkCount());

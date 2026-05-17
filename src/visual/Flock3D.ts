@@ -411,11 +411,18 @@ export class Flock3D {
         fz -= (z / len) * p.attractorAmp * fieldScalar;
       }
       if (p.repellerAmp > 0) {
-        const lenSq = x*x + y*y + z*z + 1;
-        const k = p.repellerAmp * fieldScalar * 1000 / lenSq;
-        fx += (x / Math.sqrt(lenSq)) * k;
-        fy += (y / Math.sqrt(lenSq)) * k;
-        fz += (z / Math.sqrt(lenSq)) * k;
+        // 1/r² 公式在 r → 0 时奇点；用 (r + softening)² 替代防爆
+        // softening = worldRadius * 0.02 (= 5 units at default 250) → max force capped
+        const softR = wr * 0.02;
+        const lenSq = x*x + y*y + z*z + softR * softR;
+        const len = Math.sqrt(lenSq);
+        let k = p.repellerAmp * fieldScalar * 1000 / lenSq;
+        // 再加硬上限保险，应付极端 repellerAmp 设置
+        const kMax = p.repellerAmp * 20;
+        if (k > kMax) k = kMax;
+        fx += (x / len) * k;
+        fy += (y / len) * k;
+        fz += (z / len) * k;
       }
 
       // 3. Boid sep + coh (K random neighbours)
@@ -456,18 +463,33 @@ export class Flock3D {
       pl.velX[i] = (pl.velX[i] + fx * dt) * damping;
       pl.velY[i] = (pl.velY[i] + fy * dt) * damping;
       pl.velZ[i] = (pl.velZ[i] + fz * dt) * damping;
+
+      // Velocity hard cap — 防 repeller / boid sep 在极端情况爆速
+      const vMax = wr * 0.5;   // 帧速度上限：半个世界
+      if (pl.velX[i] > vMax) pl.velX[i] = vMax; else if (pl.velX[i] < -vMax) pl.velX[i] = -vMax;
+      if (pl.velY[i] > vMax) pl.velY[i] = vMax; else if (pl.velY[i] < -vMax) pl.velY[i] = -vMax;
+      if (pl.velZ[i] > vMax) pl.velZ[i] = vMax; else if (pl.velZ[i] < -vMax) pl.velZ[i] = -vMax;
+
       pl.posX[i] += pl.velX[i] * dtF;
       pl.posY[i] += pl.velY[i] * dtF;
       pl.posZ[i] += pl.velZ[i] * dtF;
 
+      // Position sanity — 飞到 5× world 之外或 NaN/Inf → respawn
+      const px = pl.posX[i], py = pl.posY[i], pz = pl.posZ[i];
+      if (!isFinite(px) || !isFinite(py) || !isFinite(pz)
+          || Math.abs(px) > wr * 5 || Math.abs(py) > wr * 5 || Math.abs(pz) > wr * 5) {
+        this._respawn(i);
+        continue;
+      }
+
       // soft world boundary
-      const dSq = pl.posX[i]*pl.posX[i] + pl.posY[i]*pl.posY[i] + pl.posZ[i]*pl.posZ[i];
+      const dSq = px*px + py*py + pz*pz;
       if (dSq > wrSq * 1.5) {
         const d = Math.sqrt(dSq);
         const pull = (d - wr) / wr * 0.05;
-        pl.velX[i] -= (pl.posX[i] / d) * pull;
-        pl.velY[i] -= (pl.posY[i] / d) * pull;
-        pl.velZ[i] -= (pl.posZ[i] / d) * pull;
+        pl.velX[i] -= (px / d) * pull;
+        pl.velY[i] -= (py / d) * pull;
+        pl.velZ[i] -= (pz / d) * pull;
       }
 
       // 5. push trail
