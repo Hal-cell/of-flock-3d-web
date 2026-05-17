@@ -132,6 +132,12 @@ window.addEventListener('keydown', (e) => {
 let lastT = performance.now();
 let fpsAccum = 0, fpsFrames = 0, fpsLastReport = lastT;
 
+// Event-audio rate cap (hardcoded 2000/sec)：
+// 视觉碰撞闪烁保持原样不变，但 audio event trigger 通过 token bucket 限速
+// → 粒子激烈聚集时视觉密度不缩水，音频不被几千次/秒的触发轰塌
+const MAX_AUDIO_EVENTS_PER_SEC = 2000;
+let audioEventTokens = MAX_AUDIO_EVENTS_PER_SEC;
+
 function tick(now: number) {
   let dt = (now - lastT) / 1000;
   if (dt > 0.1) dt = 0.1;
@@ -186,8 +192,20 @@ function tick(now: number) {
   // For now just use audio energy as proxy
   flock.setAudioInfluence(audioE);
 
-  // Collisions → synth event triggers
-  for (const ev of flock.getCollisionsThisFrame()) {
+  // Collisions → synth event triggers（token bucket 限速，视觉碰撞不变）
+  // Refill bucket; cap at MAX/sec → 即使 2000+ collisions/frame 也只送 ~33 个 audio trigger
+  audioEventTokens = Math.min(
+    MAX_AUDIO_EVENTS_PER_SEC,
+    audioEventTokens + MAX_AUDIO_EVENTS_PER_SEC * dt
+  );
+  const rawCollisions = flock.getCollisionsThisFrame();
+  // 按 mass 降序：tokens 不够时优先保留"分量重"的合并 → 听感不丢核心事件
+  const sortedCollisions = rawCollisions.length > 1
+    ? [...rawCollisions].sort((a, b) => b.newMass - a.newMass)
+    : rawCollisions;
+  for (const ev of sortedCollisions) {
+    if (audioEventTokens < 1) break;
+    audioEventTokens -= 1;
     synth.triggerCollision({
       pos: { x: ev.pos.x, y: ev.pos.y, z: ev.pos.z },
       mass: ev.newMass,
