@@ -70,28 +70,28 @@ export interface FlockParams {
   myceliumFboBloom: boolean; myceliumFboFade: number;
 }
 
-// Defaults imported from C++ saved XML (flock_settings.xml). 用户 C++ 端最新调好的值
+// Defaults from user's current web session (snapshotted from localStorage)
 export const DEFAULT_FLOCK_PARAMS: FlockParams = {
-  particleCount: 16274, worldRadius: 250, particleAlpha: 0.705,
-  autoRotate: false, hueBase: 0.523789, hueRange: 0.095125, brightness: 1.0,
-  noiseAmplitude: 169, noiseScale: 0.001, noiseSpeed: 0.5,
-  vortexAmp: 27.8, spiralAmp: 69.8, curlAmp: 200,
-  attractorAmp: 51.6, repellerAmp: 50,
-  flockSeparation: 2.0, flockCohesion: 5.389, flockCohesionSpeed: 0.171,
-  flockNeighborRadius: 232.9, mergeDistance: 6.9,
-  flockSpawnRate: 40000, flockMinAlive: 0.89, flockDamping: 0.95,
-  particleSizeMin: 1.6, particleSizeMax: 7.3,
+  particleCount: 20000, worldRadius: 250, particleAlpha: 0.6,
+  autoRotate: true, hueBase: 0.55, hueRange: 0.2, brightness: 1,
+  noiseAmplitude: 132.2, noiseScale: 0.0058884, noiseSpeed: 0.1505,
+  vortexAmp: 30, spiralAmp: 0, curlAmp: 26.6,
+  attractorAmp: 51.8, repellerAmp: 73.6,
+  flockSeparation: 2.97, flockCohesion: 4.34, flockCohesionSpeed: 0.033,
+  flockNeighborRadius: 81.37, mergeDistance: 12.076,
+  flockSpawnRate: 225, flockMinAlive: 0.5, flockDamping: 0.92,
+  particleSizeMin: 2.881, particleSizeMax: 10.7,
   fadeInFrames: 20, fadeOutFrames: 30,
-  flashFrames: 14, flashIntensity: 0.756,
-  accentChance: 0.402539, accentSizeMul: 2.48,
-  clusterGridRes: 6, clusterMinFlash: 18,
-  tailLength: 0, tailAudioSensitivity: 0.934219, tailAlpha: 0.983418,
-  matBrightness: 0.55, matSpecular: 0.643789, matAmbient: 0.35377, matGlow: 0.00990234,
-  conductorAmount: 1.0,
+  flashFrames: 12, flashIntensity: 1,
+  accentChance: 0.1, accentSizeMul: 2.5,
+  clusterGridRes: 5, clusterMinFlash: 5,
+  tailLength: 0, tailAudioSensitivity: 1, tailAlpha: 0.45,
+  matBrightness: 0.208, matSpecular: 0.326, matAmbient: 0.163, matGlow: 0.702,
+  conductorAmount: 1,
   myceliumEnabled: true, myceliumLinkMode: 3,   // Gabriel
-  myceliumLinkDist: 167.7, myceliumMaxLinks: 14, myceliumKnnK: 8,
-  myceliumLifetime: 121, myceliumNodeStride: 29,
-  myceliumAlpha: 0.35, myceliumFadeNear: 0.333, myceliumLineWidth: 3.5,
+  myceliumLinkDist: 69.015, myceliumMaxLinks: 5, myceliumKnnK: 4,
+  myceliumLifetime: 90, myceliumNodeStride: 5,
+  myceliumAlpha: 0.35, myceliumFadeNear: 0, myceliumLineWidth: 4,
   myceliumFboBloom: false, myceliumFboFade: 0.93,
 };
 

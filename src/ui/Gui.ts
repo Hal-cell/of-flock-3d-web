@@ -187,25 +187,25 @@ export function buildGui(opts: {
   fMyc.add(flock.p, 'myceliumLineWidth', 0.5, 4);
 
   // ─── Synth ───
-  // Defaults imported from C++ synth_settings.xml
+  // Defaults from user's current web session (snapshotted from localStorage)
   const synthParams = {
-    audioEnabled: true, masterVol: 0.282,
-    eventVol: 0.77, eventDecayMs: 163.4, eventAttackMs: 2, eventGainPerHit: 0.5865,
-    minMassToFire: 2.75, eventQuantize: true,
-    reverbAmt: 0.853, reverbSize: 0.8245, reverbDamp: 0.641934, reverbPreDelayMs: 5.68359,
-    rootFreq: 91.575, scaleType: 1, droneGlideMs: 2427, audioEnergyGain: 1,
-    fmRatio: 6.78, fmIndex: 3, fmIndexDecayMs: 46.5083,
-    tailToIdxDecayDepth: 0.579, eventFoldAmount: 0,
-    clusterDroneVol: 0.512, clusterAttackMs: 3052.81, clusterReleaseMs: 4876.79,
-    clusterDetune: 0.00791075, clusterProximity: 384.082,
-    clusterCutoff: 621, clusterResonance: 0.643109, clusterDroneFold: 0.171,
-    windVol: 0.155, windCutoff: 1631.63, windResonance: 0.2, windAmpToCutoff: 0.544,
-    windLfoRate: 0.130612, windLfoDepth: 0.647959,
-    granVol: 0.83, grainSizeMs: 122, grainBaseRate: 135.9, granClusterInfluence: 14.4,
-    grainPitchOffset: 14.7, grainPitchSpread: 11, grainPanSpread: 0.575, grainAttackFrac: 0.12,
+    audioEnabled: true, masterVol: 0.5,
+    eventVol: 0.6, eventDecayMs: 50, eventAttackMs: 2, eventGainPerHit: 0.4937,
+    minMassToFire: 0, eventQuantize: true,
+    reverbAmt: 0.55, reverbSize: 0.85, reverbDamp: 0.5, reverbPreDelayMs: 20,
+    rootFreq: 110, scaleType: 0, droneGlideMs: 600, audioEnergyGain: 1.9424,
+    fmRatio: 2, fmIndex: 3, fmIndexDecayMs: 40,
+    tailToIdxDecayDepth: 0.5, eventFoldAmount: 0,
+    clusterDroneVol: 0.5, clusterAttackMs: 800, clusterReleaseMs: 1500,
+    clusterDetune: 0.008, clusterProximity: 80,
+    clusterCutoff: 600, clusterResonance: 0.3, clusterDroneFold: 0,
+    windVol: 0.4, windCutoff: 800, windResonance: 0.2, windAmpToCutoff: 1,
+    windLfoRate: 0.4, windLfoDepth: 0.4,
+    granVol: 1, grainSizeMs: 55.82, grainBaseRate: 128.978, granClusterInfluence: 17.08,
+    grainPitchOffset: 10.56, grainPitchSpread: 20.904, grainPanSpread: 0.686, grainAttackFrac: 0.02768,
     conductorAmount: 1,
-    clickEnabled: true, clickVol: 0.405, clickBaseRate: 0, clickDensityBoost: 63.5,
-    clickConductorAmount: 0.845, clickLengthMs: 8.55, clickFormantHz: 9000,
+    clickEnabled: true, clickVol: 0.147, clickBaseRate: 8, clickDensityBoost: 39.6,
+    clickConductorAmount: 1, clickLengthMs: 5.814, clickFormantHz: 9000,
   };
 
   // Apply saved synth params (overwrites defaults for keys present in saved)

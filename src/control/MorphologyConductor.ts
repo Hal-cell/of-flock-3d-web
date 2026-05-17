@@ -19,20 +19,19 @@ export interface ConductorParams {
   autoLoop: boolean;
 }
 
-// Defaults from C++ morphology_settings.xml (Audio conductor)
+// Defaults from user's current web session (snapshotted from localStorage)
 export const DEFAULT_CONDUCTOR_PARAMS: ConductorParams = {
-  mode: 2,        // DESCENT
-  curveShape: 3,  // SIGMOID
-  phaseDuration: 10, oscRate: 0.5, oscDepth: 0.25,
+  mode: 3,        // OSCILLATION
+  curveShape: 2,  // LOGARITHMIC
+  phaseDuration: 29.143, oscRate: 0.1448, oscDepth: 0.444,
   autoLoop: true,
 };
 
-// Defaults from C++ morphology_visual_settings.xml (Visual conductor for counterpoint)
 export const DEFAULT_VISUAL_CONDUCTOR_PARAMS: ConductorParams = {
-  mode: 2,        // DESCENT (matches C++ first-run + saved override)
-  curveShape: 3,
+  mode: 3,        // OSCILLATION
+  curveShape: 3,  // SIGMOID
   phaseDuration: 8, oscRate: 0.5, oscDepth: 0.25,
-  autoLoop: false,
+  autoLoop: true,
 };
 
 const BRIDGE_DECAY = 0.92;
