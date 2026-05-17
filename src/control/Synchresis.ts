@@ -14,10 +14,11 @@ export interface SynchresisParams {
   convergenceAmount: number;
 }
 
+// Defaults from C++ synchresis_settings.xml
 export const DEFAULT_SYNCHRESIS_PARAMS: SynchresisParams = {
-  enabled: false,
-  syncPeriod: 30, syncDuration: 5,
-  syncPower: 0.5, driftTolerance: 0.15,
+  enabled: true,
+  syncPeriod: 8.6, syncDuration: 3.1,
+  syncPower: 1.315, driftTolerance: 0.163,
   counterpointEnabled: false, convergenceAmount: 0.85,
 };
 

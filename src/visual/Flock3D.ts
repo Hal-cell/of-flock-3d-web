@@ -70,27 +70,28 @@ export interface FlockParams {
   myceliumFboBloom: boolean; myceliumFboFade: number;
 }
 
+// Defaults imported from C++ saved XML (flock_settings.xml). 用户 C++ 端最新调好的值
 export const DEFAULT_FLOCK_PARAMS: FlockParams = {
-  particleCount: 20000, worldRadius: 250, particleAlpha: 0.6,
-  autoRotate: true, hueBase: 0.55, hueRange: 0.2, brightness: 1.0,
-  noiseAmplitude: 25, noiseScale: 0.005, noiseSpeed: 0.05,
-  vortexAmp: 0, spiralAmp: 0, curlAmp: 0,
-  attractorAmp: 0, repellerAmp: 0,
-  flockSeparation: 0.8, flockCohesion: 1.0, flockCohesionSpeed: 0.01,
-  flockNeighborRadius: 80, mergeDistance: 6,
-  flockSpawnRate: 25, flockMinAlive: 0.5, flockDamping: 0.92,
-  particleSizeMin: 3, particleSizeMax: 10,
+  particleCount: 16274, worldRadius: 250, particleAlpha: 0.705,
+  autoRotate: false, hueBase: 0.523789, hueRange: 0.095125, brightness: 1.0,
+  noiseAmplitude: 169, noiseScale: 0.001, noiseSpeed: 0.5,
+  vortexAmp: 27.8, spiralAmp: 69.8, curlAmp: 200,
+  attractorAmp: 51.6, repellerAmp: 50,
+  flockSeparation: 2.0, flockCohesion: 5.389, flockCohesionSpeed: 0.171,
+  flockNeighborRadius: 232.9, mergeDistance: 6.9,
+  flockSpawnRate: 40000, flockMinAlive: 0.89, flockDamping: 0.95,
+  particleSizeMin: 1.6, particleSizeMax: 7.3,
   fadeInFrames: 20, fadeOutFrames: 30,
-  flashFrames: 12, flashIntensity: 1.0,
-  accentChance: 0.1, accentSizeMul: 2.5,
-  clusterGridRes: 5, clusterMinFlash: 5,
-  tailLength: 8, tailAudioSensitivity: 1.0, tailAlpha: 0.45,
-  matBrightness: 0.55, matSpecular: 0.35, matAmbient: 0.25, matGlow: 0.3,
-  conductorAmount: 0.0,
-  myceliumEnabled: false, myceliumLinkMode: 0,
-  myceliumLinkDist: 40, myceliumMaxLinks: 4, myceliumKnnK: 6,
-  myceliumLifetime: 90, myceliumNodeStride: 5,
-  myceliumAlpha: 0.35, myceliumFadeNear: 0.05, myceliumLineWidth: 1.0,
+  flashFrames: 14, flashIntensity: 0.756,
+  accentChance: 0.402539, accentSizeMul: 2.48,
+  clusterGridRes: 6, clusterMinFlash: 18,
+  tailLength: 0, tailAudioSensitivity: 0.934219, tailAlpha: 0.983418,
+  matBrightness: 0.55, matSpecular: 0.643789, matAmbient: 0.35377, matGlow: 0.00990234,
+  conductorAmount: 1.0,
+  myceliumEnabled: true, myceliumLinkMode: 3,   // Gabriel
+  myceliumLinkDist: 167.7, myceliumMaxLinks: 14, myceliumKnnK: 8,
+  myceliumLifetime: 121, myceliumNodeStride: 29,
+  myceliumAlpha: 0.35, myceliumFadeNear: 0.333, myceliumLineWidth: 3.5,
   myceliumFboBloom: false, myceliumFboFade: 0.93,
 };
 

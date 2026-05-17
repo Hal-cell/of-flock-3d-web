@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Flock3D } from './visual/Flock3D';
 import { SynthBridge } from './audio/SynthBridge';
-import { MorphologyConductor } from './control/MorphologyConductor';
+import { MorphologyConductor, DEFAULT_VISUAL_CONDUCTOR_PARAMS } from './control/MorphologyConductor';
 import { Synchresis } from './control/Synchresis';
 import { ScorePlayer } from './control/ScorePlayer';
 import { buildGui } from './ui/Gui';
@@ -44,7 +44,8 @@ const flock = new Flock3D(scene, camera);
 const synth = new SynthBridge();
 const audioConductor = new MorphologyConductor();
 const visualConductor = new MorphologyConductor();
-visualConductor.p.mode = 2;   // DESCENT by default (matches C++ first-run behaviour)
+// Visual conductor gets its own defaults (C++ morphology_visual_settings.xml)
+visualConductor.p = { ...DEFAULT_VISUAL_CONDUCTOR_PARAMS };
 const synchresis = new Synchresis();
 const scorePlayer = new ScorePlayer();
 
