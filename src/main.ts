@@ -66,6 +66,25 @@ let synthParamsRef: any = null;
 let saveTimer: number | null = null;
 
 // ─── Audio gate ───
+// ─── About / Concept modal ───
+const aboutDlg = document.getElementById('about-dialog') as HTMLDialogElement;
+const aboutCloseBtn = document.getElementById('about-close')!;
+const aboutOpenFromGate = document.getElementById('about-open-from-gate')!;
+function openAbout() { aboutDlg.showModal(); }
+function closeAbout() { aboutDlg.close(); }
+// Open from splash — stop the click from also triggering audio gate
+aboutOpenFromGate.addEventListener('click', (e) => {
+  e.stopPropagation();
+  openAbout();
+});
+aboutCloseBtn.addEventListener('click', closeAbout);
+// click outside the dialog body (on backdrop) → close
+aboutDlg.addEventListener('click', (e) => {
+  if (e.target === aboutDlg) closeAbout();
+});
+// Expose for GUI button (added later in buildGui via System folder)
+(window as any).__openAbout = openAbout;
+
 const gate = document.getElementById('audio-gate')!;
 async function bootAudio() {
   await synth.init();

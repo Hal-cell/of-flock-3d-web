@@ -52,6 +52,9 @@ export function buildGui(opts: {
     }
   }, 'reset').name('Reset all settings');
   sysFolder.add({
+    about: () => { (window as any).__openAbout?.(); }
+  }, 'about').name('About / Concept');
+  sysFolder.add({
     copyJson: async () => {
       const snapshot = {
         flock: { ...flock.p },

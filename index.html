@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>of-flock-3d (web)</title>
+    <title>Flock — a spectromorphological audiovisual composition</title>
     <style>
       :root {
         color-scheme: dark;
@@ -71,6 +71,19 @@
         letter-spacing: 0.25em;
         text-transform: uppercase;
       }
+      #audio-gate .about-link {
+        margin-top: 8px;
+        font-size: 11px;
+        opacity: 0.5;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        cursor: pointer;
+        pointer-events: auto;
+        transition: opacity 0.2s;
+      }
+      #audio-gate .about-link:hover { opacity: 0.9; }
       /* HUD overlay */
       #hud {
         position: fixed;
@@ -84,17 +97,247 @@
         z-index: 10;
         line-height: 1.5;
       }
+      /* ── Concept modal ── */
+      #about-dialog {
+        background: rgba(8, 10, 14, 0.95);
+        color: #e8eaf0;
+        border: 1px solid rgba(120, 140, 180, 0.25);
+        border-radius: 6px;
+        padding: 0;
+        max-width: 720px;
+        width: 90vw;
+        max-height: 85vh;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6);
+      }
+      #about-dialog::backdrop {
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(6px);
+      }
+      #about-dialog .scroll {
+        max-height: 85vh;
+        overflow-y: auto;
+        padding: 42px 56px 48px;
+        line-height: 1.65;
+        font-size: 14px;
+        font-weight: 300;
+      }
+      #about-dialog h1 {
+        font-size: 28px;
+        font-weight: 200;
+        letter-spacing: 0.22em;
+        margin: 0 0 4px;
+        text-transform: uppercase;
+      }
+      #about-dialog .deck {
+        font-size: 12px;
+        opacity: 0.55;
+        letter-spacing: 0.18em;
+        font-style: italic;
+        margin-bottom: 36px;
+      }
+      #about-dialog h2 {
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        opacity: 0.85;
+        margin: 32px 0 12px;
+        border-bottom: 1px solid rgba(120, 140, 180, 0.15);
+        padding-bottom: 6px;
+      }
+      #about-dialog p {
+        margin: 0 0 14px;
+        opacity: 0.85;
+      }
+      #about-dialog ul {
+        padding-left: 20px;
+        opacity: 0.85;
+      }
+      #about-dialog ul li {
+        margin-bottom: 8px;
+      }
+      #about-dialog em { color: #aec0e0; font-style: italic; }
+      #about-dialog strong { font-weight: 500; color: #f0f3f8; }
+      #about-dialog code {
+        font-family: "SF Mono", Menlo, monospace;
+        font-size: 12px;
+        background: rgba(120, 140, 180, 0.1);
+        padding: 1px 6px;
+        border-radius: 3px;
+      }
+      #about-dialog .refs {
+        font-size: 12px;
+        opacity: 0.6;
+        line-height: 1.55;
+      }
+      #about-dialog .colophon {
+        margin-top: 36px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(120, 140, 180, 0.15);
+        font-size: 12px;
+        opacity: 0.55;
+        letter-spacing: 0.05em;
+      }
+      #about-close {
+        position: sticky;
+        top: 12px;
+        float: right;
+        margin: -8px -8px 0 0;
+        background: transparent;
+        border: none;
+        color: #e8eaf0;
+        opacity: 0.5;
+        font-size: 22px;
+        cursor: pointer;
+        padding: 4px 10px;
+        font-family: inherit;
+        line-height: 1;
+      }
+      #about-close:hover { opacity: 1; }
     </style>
   </head>
   <body>
     <div id="app"></div>
-    <div id="hud">of-flock-3d · web port · P0</div>
+    <div id="hud">Flock · web</div>
 
     <div id="audio-gate">
       <div class="title">Flock</div>
       <div class="sub">An experiment of motion-based spectromorphological audiovisual composition <span class="author">— made by Hal Xu</span></div>
       <div class="hint">click anywhere to start</div>
+      <div class="about-link" id="about-open-from-gate">About / Concept</div>
     </div>
+
+    <dialog id="about-dialog">
+      <div class="scroll">
+        <button id="about-close" aria-label="Close">×</button>
+        <h1>Flock</h1>
+        <div class="deck">an experiment in motion-based spectromorphological audiovisual composition</div>
+
+        <h2>The question</h2>
+        <p>
+          Most audiovisual works tie sound to picture mechanistically — a beat triggers a flash,
+          a melody traces a line. <em>Flock</em> asks something different: what if image and
+          sound shared an <strong>energy-motion identity</strong> rather than discrete events?
+        </p>
+        <p>
+          This piece is a real-time generative system in which 20,000 particles flock, merge,
+          and form transient communities. Their collective motion is the score. The synth doesn't
+          "play music" — it lives inside the same morphological field as the visual.
+        </p>
+
+        <h2>Spectromorphology</h2>
+        <p>
+          The framework comes from Denis Smalley (1997). <em>Spectromorphology</em> is the study
+          of sound spectra <em>as they unfold through time</em> — independent of the physical
+          source that made them. A spectromorphology is a recognisable shape of energy in time:
+          an ascent, a sustained gesture, an oscillation, a sudden cessation.
+        </p>
+        <p>
+          Smalley's motion typology — unidirectional ascent / descent, cyclical motion,
+          oscillation around a centre, layered combinations — gives us a vocabulary for talking
+          about <em>how</em> energy moves through a piece without referring to "notes" or "melody".
+          What matters is the <strong>shape of becoming</strong>.
+        </p>
+
+        <h2>Audiovisual counterpoint</h2>
+        <p>
+          Bret Battey extends this to audiovisual work as <em>Fluid Audiovisual Counterpoint</em>:
+          sound and image as two voices that share an underlying morphological grammar but which
+          are free to part ways and rejoin — like polyphonic voices in counterpoint. They drift
+          independently most of the time, and at specific structural moments (a <strong>cadence</strong>)
+          they converge.
+        </p>
+        <p>
+          This is more porous than the "tight sync" tradition of music video, and more meaningful
+          than purely "atmospheric" pairing. The two media maintain their own articulation while
+          sharing a single morphological argument.
+        </p>
+
+        <h2>How this work implements it</h2>
+        <p>
+          Behind the visible particles, a hidden <strong>Morphology Conductor</strong> generates
+          an evolving energy curve in [0..1] — an ascent, a descent, a slow oscillation. By default
+          both audio and visual sides listen to this same curve and shape their parameters along it:
+          as energy rises, drone cutoff opens, particles brighten, granular density swells.
+        </p>
+        <p>
+          In <strong>counterpoint mode</strong>, a second conductor takes over the visual side.
+          The two energy curves now drift independently. A separate <strong>Synchresis</strong>
+          module emits periodic Gaussian <em>cadence pulses</em>; during each pulse the visual is
+          pulled gently toward the audio trajectory before drifting free again.
+        </p>
+        <p>
+          The particles themselves are not a visualisation of the synth — they <strong>are</strong>
+          the synth's input. Their behaviour feeds back into the sonic structure in several layers:
+        </p>
+        <ul>
+          <li>
+            <strong>Cluster Drone:</strong> a 3D grid hash detects regions of high particle
+            density. Each detected cluster gets a polyphonic voice (3 detuned saws → SVF lowpass
+            → optional wave folder), and its pitch is allocated by chord-priority quantisation
+            against the active scale. As clusters drift, voices glide.
+          </li>
+          <li>
+            <strong>Event triggers:</strong> when two particles collide and merge, a 2-op FM voice
+            fires (Chowning-style bell), pitch drawn from the merged mass.
+          </li>
+          <li>
+            <strong>Granular cloud:</strong> 16-voice granular synth on a bundled sample
+            (ChurchBells, from the FluCoMa Tremblay pack) whose density is driven by the live
+            cluster count.
+          </li>
+          <li>
+            <strong>Mycelium:</strong> a dynamic Gabriel-graph of edges between nearby particles,
+            visible as faint thread-like connections. Their count drives a <strong>pulsar
+            synthesis</strong> click layer (Curtis Roads), giving the swarm a high-frequency
+            rhythmic texture.
+          </li>
+          <li>
+            <strong>Wind:</strong> persistent stereo filtered noise underneath, modulated by the
+            sum of active force-field strengths.
+          </li>
+          <li>
+            <strong>Hall reverb:</strong> a 4-tap FDN with Hadamard mixing and HF damping, giving
+            the whole piece a unified ambient space.
+          </li>
+        </ul>
+        <p>
+          Each audio layer is mapped to the conductor through its own <em>EnergyStage</em> — a
+          small object specifying <em>when along the energy axis</em> that layer wakes up. Wind
+          comes in early (low energy already produces a breath), drone is mid-band, brightness
+          and metallic spectral folding only emerge at high energy. As the conductor curve rises
+          and falls, different sonic strata enter and depart in choreographed order — the audio
+          equivalent of an unfolding spectromorphology.
+        </p>
+
+        <h2>Try it</h2>
+        <p>
+          Click anywhere on the splash to begin. The control panel (top-right, click title to
+          expand) exposes every parameter — particle fields, boid forces, mycelium link mode,
+          synth layers, conductor curves, cadence behaviour. Drag any <code>.wav</code> onto the
+          page to swap the granular source. <code>Spacebar</code> resets the flock;
+          <code>F</code> toggles fullscreen.
+        </p>
+        <p>
+          The piece does not end. There is no "track length". Listening time is part of the work.
+        </p>
+
+        <h2>References</h2>
+        <div class="refs">
+          Smalley, D. (1997). <em>Spectromorphology: explaining sound-shapes.</em> Organised Sound 2(2).<br>
+          Battey, B. <em>Application of Spectromorphology in Abstract Audiovisual Composition.</em><br>
+          Chion, M. (1994). <em>Audio-Vision: Sound on Screen.</em> (origin of "synchresis")<br>
+          Roads, C. (2001). <em>Microsound.</em> MIT Press. (pulsar synthesis)<br>
+          Tremblay, P-A. — <em>FluCoMa</em> (Fluid Corpus Manipulation): ChurchBells sample.
+        </div>
+
+        <div class="colophon">
+          By <strong>Hal Xu</strong> — PhD candidate in Creative Music Practice, University of Edinburgh.
+          Source: <a style="color: #9fc4ff;" href="https://github.com/Hal-cell/of-flock-3d-web" target="_blank" rel="noopener">github.com/Hal-cell/of-flock-3d-web</a>
+        </div>
+      </div>
+    </dialog>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
