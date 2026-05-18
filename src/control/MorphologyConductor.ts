@@ -22,16 +22,16 @@ export interface ConductorParams {
 // Defaults from user's current web session (snapshotted from localStorage)
 export const DEFAULT_CONDUCTOR_PARAMS: ConductorParams = {
   mode: 3,        // OSCILLATION
-  curveShape: 2,  // LOGARITHMIC
-  phaseDuration: 29.143, oscRate: 0.1448, oscDepth: 0.444,
-  autoLoop: true,
+  curveShape: 0,  // LINEAR
+  phaseDuration: 36.518, oscRate: 0.05, oscDepth: 0.41,
+  autoLoop: false,
 };
 
 export const DEFAULT_VISUAL_CONDUCTOR_PARAMS: ConductorParams = {
-  mode: 3,        // OSCILLATION
-  curveShape: 3,  // SIGMOID
-  phaseDuration: 8, oscRate: 0.5, oscDepth: 0.25,
-  autoLoop: true,
+  mode: 0,        // FREE
+  curveShape: 1,  // EXPONENTIAL
+  phaseDuration: 29.143, oscRate: 0.77285, oscDepth: 0.25,
+  autoLoop: false,
 };
 
 const BRIDGE_DECAY = 0.92;

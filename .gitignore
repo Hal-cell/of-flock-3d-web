@@ -23,3 +23,4 @@ yarn-debug.log*
 
 # Vite cache
 .vite/
+.vercel

@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && gh-pages -d dist -t true"
+    "deploy": "npm run build && gh-pages -d dist --nojekyll"
   },
   "dependencies": {
     "lil-gui": "^0.20.0",

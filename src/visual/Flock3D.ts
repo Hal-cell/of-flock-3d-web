@@ -74,9 +74,9 @@ export interface FlockParams {
 export const DEFAULT_FLOCK_PARAMS: FlockParams = {
   particleCount: 20000, worldRadius: 250, particleAlpha: 0.6,
   autoRotate: true, hueBase: 0.55, hueRange: 0.2, brightness: 1,
-  noiseAmplitude: 132.2, noiseScale: 0.0058884, noiseSpeed: 0.1505,
-  vortexAmp: 30, spiralAmp: 0, curlAmp: 26.6,
-  attractorAmp: 51.8, repellerAmp: 73.6,
+  noiseAmplitude: 26.6, noiseScale: 0.0058884, noiseSpeed: 0.0415,
+  vortexAmp: 13.2, spiralAmp: 0, curlAmp: 11.6,
+  attractorAmp: 10.64, repellerAmp: 307.2,
   flockSeparation: 2.97, flockCohesion: 4.34, flockCohesionSpeed: 0.033,
   flockNeighborRadius: 81.37, mergeDistance: 12.076,
   flockSpawnRate: 225, flockMinAlive: 0.5, flockDamping: 0.92,
