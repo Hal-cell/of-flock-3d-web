@@ -91,7 +91,7 @@ export const DEFAULT_FLOCK_PARAMS: FlockParams = {
   myceliumEnabled: true, myceliumLinkMode: 3,   // Gabriel
   myceliumLinkDist: 69.015, myceliumMaxLinks: 5, myceliumKnnK: 4,
   myceliumLifetime: 90, myceliumNodeStride: 5,
-  myceliumAlpha: 0.35, myceliumFadeNear: 0, myceliumLineWidth: 4,
+  myceliumAlpha: 0.35, myceliumFadeNear: 0, myceliumLineWidth: 0,
   myceliumFboBloom: false, myceliumFboFade: 0.93,
 };
 
