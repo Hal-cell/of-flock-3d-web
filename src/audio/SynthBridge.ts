@@ -27,7 +27,11 @@ export class SynthBridge {
   async init(): Promise<void> {
     if (this.ctx) return;
     this.ctx = new AudioContext({ latencyHint: 'interactive', sampleRate: 44100 });
-    await this.ctx.audioWorklet.addModule('/synth-worklet.js');
+    // 用 import.meta.env.BASE_URL 拼出 worklet 绝对路径
+    // → 兼容 GitHub Pages 子路径 (https://user.github.io/of-flock-3d-web/synth-worklet.js)
+    const base = import.meta.env.BASE_URL;
+    const workletUrl = (base.endsWith('/') ? base : base + '/') + 'synth-worklet.js';
+    await this.ctx.audioWorklet.addModule(workletUrl);
     this.node = new AudioWorkletNode(this.ctx, 'synth-processor', {
       numberOfInputs: 0,
       numberOfOutputs: 1,
@@ -105,7 +109,9 @@ export class SynthBridge {
   /** Decode the bundled ChurchBells sample on startup */
   async loadDefaultSample() {
     try {
-      const res = await fetch('/samples/Tremblay-CF-ChurchBells.wav');
+      const base = import.meta.env.BASE_URL;
+      const url = (base.endsWith('/') ? base : base + '/') + 'samples/Tremblay-CF-ChurchBells.wav';
+      const res = await fetch(url);
       if (!res.ok) throw new Error('sample not bundled');
       const ab = await res.arrayBuffer();
       await this.decodeAndSend(ab, 'Tremblay-CF-ChurchBells.wav');
